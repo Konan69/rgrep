@@ -1,4 +1,8 @@
-use std::{env, error::Error, fs, process};
+use std::{
+    env::{self, Args},
+    error::Error,
+    fs, process,
+};
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.filename)?;
@@ -23,24 +27,19 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() < 2 {
-            return Err("Not enough arguments");
-        }
-        let query = args
-            .get(1)
-            .unwrap_or_else(|| {
-                eprintln!("Usage: rgrep <query> <file>");
-                process::exit(1);
-            })
-            .clone();
-        let filename = args
-            .get(2)
-            .unwrap_or_else(|| {
-                eprintln!("Usage: rgrep <query> <file>");
-                process::exit(1);
-            })
-            .clone();
+    pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
+        args.next();
+
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("didnt get a query string"),
+        };
+
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("didnt get a file name"),
+        };
+
         let case_sensitive = env::var("CASE_SENSITIVE").is_err();
 
         Ok(Config {
